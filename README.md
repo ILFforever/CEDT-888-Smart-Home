@@ -54,7 +54,7 @@ You can access the system using the test credentials:
 │  └───────┬────────┘  │   │  │              │   │   │  └──────────┬─────────┘  │
 │          │ SPI       │   │  │ • Room Temp  │   │   │             │            │
 │          ▼           │   │  │ • Humidity   │   │   │             │            │
-│  ┌────────────────┐  │   │  │ • Gas/CO     │   │   │             │            │
+│  ┌────────────────┐  │   │  │ • Light/Gas  │   │   │             │            │
 │  │ Doorbell LCD   │  │   │  └──────┬───────┘   │   │             │            │
 │  │ - Display      │  │   │         │ Mesh      │   │             │            │
 │  │ - NFC Scanner  │  │   │         ▼           │   │             │            │
@@ -106,7 +106,7 @@ You can access the system using the test credentials:
 DATA FLOWS:
 ═══════════════════════════════════════════════════════════════════════════════════
 
-1. Room Sensors → [Mesh] → Main Mesh Hub → [UART] → Main LCD → [WiFi] → Backend
+1. Room Sensors → [Mesh] → Main Mesh Hub → [UART] → Main LCD → [WiFi/HTTP] → Backend
 2. Camera → [SPI] → Doorbell LCD (w/ NFC) → [WiFi] → Backend
 3. Door Lock → [WiFi] → Backend
 4. Backend → [HTTPS] → Web Dashboard
@@ -123,8 +123,9 @@ DATA FLOWS:
 
 ### 🌡️ Environmental Monitoring
 - **Air Quality Sensing**: PMS5003 particulate matter sensor (PM1.0, PM2.5, PM10)
-- **Temperature & Humidity**: DHT11/DHT22 sensors distributed across rooms
-- **Gas Detection**: MQ-series sensors for CO, smoke, and hazardous gases
+- **Temperature & Humidity**: AHT25 (I2C) sensors in room nodes; DHT11 on the main mesh hub
+- **Light Level**: VEML7700 (I2C) ambient light sensor in room nodes
+- **Gas Detection**: MICS5524 analog gas sensor (CO) in room nodes
 - **Real-time Alerts**: Threshold-based notifications via backend API
 
 ### 🔗 Mesh Networking
@@ -144,7 +145,7 @@ DATA FLOWS:
 - **Firebase Backend**: Firestore database with real-time synchronization
 - **RESTful API**: Express.js server with comprehensive endpoints
 - **Next.js Dashboard**: Modern, responsive web interface
-- **MQTT Support**: Lightweight messaging for IoT devices
+- **MQTT Events**: Doorbell ring, face-detection and hub-command notifications via a public HiveMQ broker (sensor readings are sent to the backend over HTTP)
 - **WebSocket Updates**: Real-time data streaming to frontend
 
 ### 📊 Data Analytics
@@ -181,9 +182,9 @@ DATA FLOWS:
 ### Distributed Sensors
 | Component | Model | Purpose |
 |-----------|-------|---------|
-| Room Sensor Nodes | ESP32 + DHT22 | Temperature/humidity monitoring |
+| Room Sensor Nodes | ESP32 + AHT25 + VEML7700 (I2C) | Temperature, humidity and light monitoring |
 | Door Lock | ESP32 + Servo | Access control |
-| Gas Sensors | ESP32 + MQ-series | Safety monitoring |
+| Gas Sensors | ESP32 + MICS5524 (analog) | CO / gas safety monitoring |
 
 ## 💻 Software Stack
 
@@ -211,9 +212,9 @@ DATA FLOWS:
 - **UART**: 115200 baud for inter-device serial communication
 - **SPI**: Camera to LCD data transfer
 - **WiFi**: 802.11 b/g/n for cloud connectivity
-- **MQTT**: Lightweight IoT messaging
+- **MQTT**: Event and command notifications (HiveMQ public broker; topics `smarthome/doorbell/ring`, `smarthome/face/detection`, `smarthome/device/{id}/command`)
 - **Painless Mesh**: Self-organizing mesh network
-- **HTTP**:  API communication
+- **HTTP**: Sensor data upload and API communication (gateway → backend `/api/v1/devices/sensor-data`)
 
 ## 📁 Branch Structure
 
